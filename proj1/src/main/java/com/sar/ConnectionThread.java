@@ -139,10 +139,9 @@ public class ConnectionThread extends Thread  {
                     new InputStreamReader(in, "8859_1" ));
             OutputStream out = client.getOutputStream( );
             TextPrinter = new PrintStream(out, false, "8859_1");
-            
-           
-            boolean ok= req.parse_Request (TextReader, true); //reads the input http request if everything was read ok it returns true
-            if (ok){// if a valid request was received 
+            //Create Request using GetRequest method
+            req= GetRequest(TextReader, true); //reads the input http request if everything was read ok it returns true
+            if (req!=null){// if a valid request was received 
                 //Create an HTTP response object. 
                 res= new Response(HTTPServer,
                     client.getInetAddress ().getHostAddress () + ":" + client.getPort (),
@@ -151,12 +150,12 @@ public class ConnectionThread extends Thread  {
                 //API URL received 
                 if (req.UrlText.toLowerCase().endsWith ("api")) 
                 {
-                    while ( req.UrlText.startsWith ("/") )
+                    while (req.UrlText.startsWith ("/") )
                       req.UrlText = req.UrlText.substring (1);  ///remove "/" from url_txt
                       JavaRESTAPI api= new JavaRESTAPI ();
                       try {
                            Log("run JavaAPI\n");
-                            api.doGet (client, req.requestHeaders, req.get_cookies(), res);
+                            api.doGet (client, req.headers, req.get_cookies(), res);
                           } catch (Exception e) {
                               res.set_error (ReplyCode.BADREQ, req.version);
                           }

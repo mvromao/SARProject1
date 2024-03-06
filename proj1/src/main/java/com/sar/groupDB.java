@@ -20,9 +20,9 @@ public class groupDB {
             pgroups.load(in);
         }
         catch(Exception e) {
-            System.err.println("Warning while loading groups database: "+e);            
+            System.err.println("Exception while loading groups database: "+e);            
         }
-        // create set with group names
+        // create set with group names in file
         for (Iterator<Object> it= pgroups.keySet().iterator(); it.hasNext (); ) {
             String entry= (String)(it.next());
             if (entry.endsWith(":"))
@@ -63,13 +63,13 @@ public class groupDB {
             String group= (String)(it.next());
             buf.append("<tr>\r\n<td> ").append(group).append("</td> <td> ");
             buf.append(pgroups.getProperty(group+":n1","")).append(" - ");
-            buf.append(JavaRESTAPI.postString2htmlString(pgroups.getProperty(group+":nam1","")));
+            buf.append(pgroups.getProperty(group+":nam1",""));
             buf.append("</td>" + "<td> ");
             buf.append(pgroups.getProperty(group+":n2","")).append(" - ");
-            buf.append(JavaRESTAPI.postString2htmlString(pgroups.getProperty(group+":nam2","")));
+            buf.append(pgroups.getProperty(group+":nam2",""));
             buf.append("</td>" + "<td> ");
             buf.append(pgroups.getProperty(group+":n3","")).append(" - ");
-            buf.append(JavaRESTAPI.postString2htmlString(pgroups.getProperty(group+":nam3","")));
+            buf.append(pgroups.getProperty(group+":nam3",""));
             buf.append("</td>\r\n</tr>\r\n");            
         }
         buf.append("</table>\r\n");

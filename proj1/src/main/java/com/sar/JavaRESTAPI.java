@@ -17,60 +17,6 @@ public class JavaRESTAPI {
         db= new groupDB(bdname);
     }
     
-     /** Converts POST string into Java string (ISO-8859-1) (removes formating codes) */
-    public static String postString2string(String in_s) {
-        if (in_s == null)
-            return null;
-        StringBuilder out_s= new StringBuilder();
-        int i= 0;
-        while (i<in_s.length()) {
-            switch (in_s.charAt (i)) {
-                case '%':   try {   // "%dd" - character code in hexadecimal
-                                i++;
-                                byte[] n= new byte[1];
-                                n[0]= (byte)Integer.parseInt(in_s.substring(i, i+2), 16);
-                                if (n[0] == -96)    // Patch for MSIE
-                                    out_s.append (' ');
-                                else
-                                    out_s.append (new String(n, "ISO-8859-1"));
-                                i++;    // Jumps first char
-                            }
-                            catch (Exception e) {
-                                System.err.println("Error parging POST string: "+e);
-                                return null;
-                            }
-                            break;
-                case '+':   out_s.append(' ');
-                            break;
-                default:    out_s.append(in_s.charAt (i));
-            }
-            i++;
-        }
-        //System.out.println("CGI2STR: '"+in_s+"' > '"+out_s+"'");
-        return out_s.toString ();
-    }
-    
-    /** Converts java string (ISO-8859-1) to HTML format */
-    public static String String2htmlString(String in_s) {
-        if (in_s == null)
-            return null;
-        StringBuilder out_s= new StringBuilder();
-        for (int i= 0; i<in_s.length(); i++) {
-            switch (in_s.charAt (i)) {
-                case ' ': out_s.append("&nbsp;"); break;
-
-                default: out_s.append(in_s.charAt (i));
-            }
-        }
-        //System.out.println("STR2HTML: '"+in_s+"' > '"+out_s+"'");
-        return out_s.toString ();        
-    }
-
-    /** Convert JAVA string (ISO-8859-1) to HTML format */
-    public static String postString2htmlString(String in_s) {
-        return JavaRESTAPI.String2htmlString(postString2string(in_s));
-    }
-    
     /** Select a subset of 'k' number of a set of numbers raging from 1 to 'max' */    
     private int[] draw_numbers(int max, int k) {
         int[] vec= new int [k];
@@ -130,7 +76,7 @@ public class JavaRESTAPI {
         String html= "<!doctype html>\r\n<html class\"no-js\" lang\"eng\">\r\n<head>\r\n";
         html += "<meta charset=\"utf-8\">\r\n";
         html += "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\r\n";
-        html += "<title>SAR 22/23</title>\r\n";
+        html += "<title>SAR 23/24</title>\r\n";
         html += "<link rel=\"stylesheet\" href=\"css/foundation.css\" />\r\n";
         html += "<script src=\"js/modernizr.js\"></script>\r\n</head>\r\n<body>\r\n";
         html += "<div class=\"row\">\r\n<div class=\"medium-12 columns\">\r\n";
@@ -139,7 +85,7 @@ public class JavaRESTAPI {
         html += "<li class=\"toggle-topbar menu-icon\"><a href=\"#\"><span>menu</span></a></li>\r\n</ul>";
         html += "<section class=\"top-bar-section\">\r\n<ul class=\"right\">\r\n<li><a href=\"SarAPI\">API request</a></li></ul></section></nav></div></div></div>\r\n";
         html += "<div class=\"row\">\r\n<div class=\"medium-12 columns\">\r\n<div class=\"panel\">\r\n";
-        html += "<h2>SAR 2022/2023</h2>\r\n";
+        html += "<h2>SAR 2023/2024</h2>\r\n";
         html += "<p>Connection from:" + ip + ": ";
         html += "" + port + " in a browser: " + tipo + "</p>\r\n";
         if (n >= 0) {
@@ -238,17 +184,7 @@ public class JavaRESTAPI {
         int cnt= -1;
 
         System.out.println("Command not implemented in API POST");
-       
-        //Convert Names from API format to HTML format before preparing the web page
-            String aux= JavaRESTAPI.postString2htmlString(nam1);
-            if (aux != null) nam1= aux;
-            aux= JavaRESTAPI.postString2htmlString(nam2);
-            if (aux != null) nam2= aux;
-            aux= JavaRESTAPI.postString2htmlString(nam3);
-            if (aux != null) nam3= aux;
-            aux= JavaRESTAPI.postString2htmlString(lastUpdate);
-            if (aux != null) lastUpdate= aux;
-         
+                
         // Prepare html page
         String html= make_Page(s.getInetAddress().getHostAddress(), s.getPort(), headers.getHeaderValue("User-Agent"), 
                 group, cnt, n1, nam1, n2, nam2, n3, nam3, (fields.getProperty("Contador") != null), lastUpdate);
