@@ -18,7 +18,7 @@ public class Request {
     public String method;   // stores the HTTP Method of the request
     public String UrlText;  // stores the url of the request
     public String version;  // stores the HTTP version of the request
-    public Headers requestHeaders; // stores the HTTP headers of the request
+    public Headers headers; // stores the HTTP headers of the request
     public Properties cookies; //stores cookies received in the Cookie Headers
     private final Main HttpServer;  // log object UserInterface
     public String text;     //store possible contents in an HTTP request (for example POST contents)
@@ -33,7 +33,7 @@ public class Request {
      */
     public Request (Main _HttpServer, String id, int LocalPort) {
         // initializes everything to null
-        this.requestHeaders= new Headers (_HttpServer);
+        this.headers= new Headers (_HttpServer);
         this.HttpServer= _HttpServer;
         this.idStr= id;
         this.LocalPort= LocalPort;
@@ -54,7 +54,7 @@ public class Request {
      * @return          header value
      */
     public String getHeaderValue(String hdrName) {
-        return requestHeaders.getHeaderValue(hdrName);
+        return headers.getHeaderValue(hdrName);
     }
     
     /**
@@ -63,7 +63,7 @@ public class Request {
      * @param hdrVal    header value
      */
     public void setHeader(String hdrName, String hdrVal) {
-        requestHeaders.setHeader(hdrName, hdrVal);
+        headers.setHeader(hdrName, hdrVal);
     }
 
     
@@ -79,68 +79,6 @@ public class Request {
      * @return true if successful
      */
     public boolean removeHeader(String hdrName) {
-        return requestHeaders.removeHeader(hdrName);
-    }
-    
-    
-    /** Parses a new HTTP query from an input steam
-     * @param TextReader   input stream Buffered Reader
-     * @param echo  if true, echoes the received message to the screen
-     * @return HTTPReplyCode.OK when successful, or HTTPReplyCode.BADREQ in case of error
-     * @throws java.io.IOException 
-     */
-    public boolean parse_Request (BufferedReader TextReader, boolean echo) throws IOException {
-        // Get first line
-        String request = TextReader.readLine( );  	// Reads the first line
-        if (request == null) {
-            if (echo) Log ("Invalid request Connection closed\n");
-            return false;
-        }
-        Log("Request: " + request + "\n");
-        StringTokenizer st= new StringTokenizer(request);
-        if (st.countTokens() != 3) {
-           if (echo) Log ("Invalid request received: " + request + "\n");
-           return false;  // Invalid request
-        } 
-        method= st.nextToken();    // Store HTTP method
-        UrlText= st.nextToken();    // Store URL
-        version= st.nextToken();  // Store HTTP version
-     
-        // read the remaining headers inside readHeaders method of headers object   
-        requestHeaders.readHeaders(TextReader, echo);
-        
-        // check if the Content-Length size is different than zero. If true read the body of the request (that can contain POST data)
-        int clength= 0;
-        try {
-            String len= requestHeaders.getHeaderValue("Content-Length");
-            if (len != null)
-                clength= Integer.parseInt (len);
-            else if (!TextReader.ready ())
-                clength= 0;
-        } catch (NumberFormatException e) {
-            if (echo) Log ("Bad request\n");
-            return false;
-        }
-        if (clength>0) {
-            // Length is not 0 - read data to string
-            String str= new String ();
-            char [] cbuf= new char [clength];
-            //the content is not formed by line ended with \n so it need to be read char by char
-            int n, cnt= 0;
-            while ((cnt<clength) && ((n= TextReader.read (cbuf)) > 0)) {
-                str= str + new String (cbuf);
-                cnt += n;
-            }
-            if (cnt != clength) {
-                Log ("Read request with "+cnt+" data bytes and Content-Length = "+clength+" bytes\n");
-                return false;
-            }
-            text= str;
-            if (echo)
-                Log ("Contents('"+text+"')\n");
-        }
-
-        return true;
-    }    
-    
+        return headers.removeHeader(hdrName);
+    } 
 }

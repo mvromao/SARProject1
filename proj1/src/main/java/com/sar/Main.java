@@ -15,7 +15,7 @@ public class Main {
     
     //Static Files Location directory
     public final String ServerName= "SAR Server by ----/-----";
-    public final static String StaticFiles = "../html";
+    public final static String StaticFiles = "proj1/html";
     public final static String HOMEFILENAME = "index.htm";
     //Keep alive settings
     public final static boolean keepAlive = true;
@@ -146,7 +146,7 @@ public class Main {
                 System.out.println("KeyStore.getInstance: "+e);
                 return;
             }
-            ksKeys.load(new FileInputStream("keystore"), passphrase);
+            ksKeys.load(new FileInputStream("proj1/keystore"), passphrase);
             System.out.println("KsKeys has "+ksKeys.size()+" keys after load");
             
             // KeyManager's decide which key material to use.

@@ -14,6 +14,7 @@ import java.net.Socket;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
+import java.util.StringTokenizer;
 import java.util.TimeZone;
 
 public class ConnectionThread extends Thread  {
@@ -42,7 +43,6 @@ public class ConnectionThread extends Thread  {
             return "unknown/unknown";
         }
         String exten = lcname.substring (extenStartsAt);
-        // System.out.println("Ext: "+exten);
         if (exten.equalsIgnoreCase (".htm"))
             return "text/html";
         else if (exten.equalsIgnoreCase (".html"))
@@ -58,9 +58,71 @@ public class ConnectionThread extends Thread  {
     public void Log(String s) {
         HTTPServer.Log ("" + client.getInetAddress ().getHostAddress () + ";"
                     + client.getPort () + "  " + s);
-        System.out.print ("" + client.getInetAddress ().getHostAddress () +
-                    ";" + client.getPort () + "  " + s);
     }
+
+     /** Reads a new HTTP Request from the input steam in to a Request object
+     * @param TextReader   input stream Buffered Reader coonected to client socket
+     * @param echo  if true, echoes the received message to the screen
+     * @return Request object containing the request received from the client, or null in case of error
+     * @throws java.io.IOException 
+     */
+    public Request GetRequest (BufferedReader TextReader, boolean echo) throws IOException {
+        // Get first line
+        String request = TextReader.readLine( );  	// Reads the first line
+        if (request == null) {
+            if (echo) Log ("Invalid request Connection closed\n");
+            return null;
+        }
+        Log("Request: " + request + "\n");
+        StringTokenizer st= new StringTokenizer(request);
+        if (st.countTokens() != 3) {
+           if (echo) Log ("Invalid request received: " + request + "\n");
+           return null;  // Invalid request
+        } 
+         //create an object to store the http request
+         Request req= new Request (HTTPServer, client.getInetAddress ().getHostAddress () + ":"
+         + client.getPort (), ServerSock.getLocalPort ());  
+         req.method= st.nextToken();    // Store HTTP method
+         req.UrlText= st.nextToken();    // Store URL
+         req.version= st.nextToken();  // Store HTTP version
+     
+        // read the remaining headers using the readHeaders method of the headers property of the request object   
+        req.headers.readHeaders(TextReader, echo);
+        
+        // check if the Content-Length size is different than zero. If true read the body of the request (that can contain POST data)
+        int clength= 0;
+        try {
+            String len= req.headers.getHeaderValue("Content-Length");
+            if (len != null)
+                clength= Integer.parseInt (len);
+            else if (!TextReader.ready ())
+                clength= 0;
+        } catch (NumberFormatException e) {
+            if (echo) Log ("Bad request\n");
+            return null;
+        }
+        if (clength>0) {
+            // Length is not 0 - read data to string
+            String str= new String ();
+            char [] cbuf= new char [clength];
+            //the content is not formed by line ended with \n so it need to be read char by char
+            int n, cnt= 0;
+            while ((cnt<clength) && ((n= TextReader.read (cbuf)) > 0)) {
+                str= str + new String (cbuf);
+                cnt += n;
+            }
+            if (cnt != clength) {
+                Log ("Read request with "+cnt+" data bytes and Content-Length = "+clength+" bytes\n");
+                return null;
+            }
+            req.text= str;
+            if (echo)
+                Log ("Contents('"+req.text+"')\n");
+        }
+
+        return req;
+    }    
+   
     
      @Override
     public void run( ) {
@@ -78,10 +140,8 @@ public class ConnectionThread extends Thread  {
             OutputStream out = client.getOutputStream( );
             TextPrinter = new PrintStream(out, false, "8859_1");
             
-            //create an object to store the http request
-            req= new Request (HTTPServer, client.getInetAddress ().getHostAddress () + ":"
-                            + client.getPort (), ServerSock.getLocalPort ());  
-            boolean ok= req.parse_Request (TextReader, true); //reads the input http request if everything was read ok it returnstrue
+           
+            boolean ok= req.parse_Request (TextReader, true); //reads the input http request if everything was read ok it returns true
             if (ok){// if a valid request was received 
                 //Create an HTTP response object. 
                 res= new Response(HTTPServer,
