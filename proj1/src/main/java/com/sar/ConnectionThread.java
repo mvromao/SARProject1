@@ -50,9 +50,13 @@ public class ConnectionThread extends Thread  {
         else if (exten.equalsIgnoreCase (".gif"))
             return "image/gif";
         else if (exten.equalsIgnoreCase (".jpg"))
-            return "image/jpeg";
-        else
-            return "application/octet-stream";
+            return "image/jpeg";  
+        else if (exten.equalsIgnoreCase (".js"))
+            return "text/javascript";
+        else if (exten.equalsIgnoreCase (".css"))
+            return "text/css";
+            
+        return "application/octet-stream";
     }
 
     public void Log(String s) {
