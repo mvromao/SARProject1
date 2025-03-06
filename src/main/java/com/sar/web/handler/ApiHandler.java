@@ -213,27 +213,22 @@ public class ApiHandler extends AbstractRequestHandler  {
         logger.debug("Processing POST request");
         try {
             Properties fields = request.getPostParameters();
-            String group = fields.getProperty("Grupo", "2021");
+            String group = fields.getProperty("Grupo", "");
             String[] numbers = new String[Main.GROUP_SIZE];
             String[] names = new String[Main.GROUP_SIZE];
             
             // Get member information from form
             for (int i = 0; i < Main.GROUP_SIZE; i++) {
-                numbers[i] = fields.getProperty("Num" + (i + 1), "0000");
-                names[i] = fields.getProperty("Nome" + (i + 1), "teste");
+                numbers[i] = fields.getProperty("Num" + (i + 1), "");
+                names[i] = fields.getProperty("Nome" + (i + 1), "");
             }
             
             boolean submitButton = (fields.getProperty("BotaoSubmeter") != null);
             boolean deleteButton = (fields.getProperty("BotaoApagar") != null);
             boolean counter = (fields.getProperty("Contador") != null);
             
-            // Create or delete group in the database 
-            submitButton= true; deleteButton = false;  
-            if (submitButton) {
-                groupService.saveGroup(group, numbers, names, counter);
-            } else if (deleteButton) {
-                groupService.deleteGroup(group);
-            }
+            // Create or delete group in the database  
+    
 
             String lastUpdate = "";
             int cnt = -1;
