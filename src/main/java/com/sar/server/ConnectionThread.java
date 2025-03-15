@@ -20,9 +20,14 @@ import java.text.SimpleDateFormat;
 import java.util.Locale;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
+import java.util.logging.Level;
+
+import javax.print.attribute.TextSyntax;
 
 public class ConnectionThread extends Thread  {
+    
     private static final Logger logger = LoggerFactory.getLogger(ConnectionThread.class);
+    
     private final HttpController controller;
 
     private final Main HTTPServer;
@@ -33,6 +38,7 @@ public class ConnectionThread extends Thread  {
     /** Creates a new instance of httpThread */
     public ConnectionThread(Main HTTPServer, ServerSocket ServerSock, 
     Socket client, HttpController controller) {
+        
         this.HTTPServer = HTTPServer;
         this.ServerSock = ServerSock;
         this.client = client;
@@ -68,9 +74,28 @@ public class ConnectionThread extends Thread  {
          req.method= st.nextToken();    // Store HTTP method
          req.urlText= st.nextToken();    // Store URL
          req.version= st.nextToken();  // Store HTTP version
-     
-        // read the remaining headers in to the headers property of the request object   
         
+        // Loop para ler os restantes headers na request
+        
+        while(TextReader.ready()){
+            String header = TextReader.readLine();
+            if(header.isEmpty())
+                break;
+            //if(header == "\r\n")
+            //st = new StringTokenizer(request);
+
+            String content[] = header.split(": ");
+            if(content.length != 2){
+                logger.debug("Bad Header: ", header);
+                continue;
+            }
+            //System.out.println(content[0] + content[1]);
+            req.headers.setHeader(content[0], content[1]);
+        }
+        
+
+        // read the remaining headers in to the headers property of the request object   
+        // TODO - PART 1
         // check if the Content-Length size is different than zero. If true read the body of the request (that can contain POST data)
         int clength= 0;
         try {
@@ -125,7 +150,7 @@ public class ConnectionThread extends Thread  {
             //Create response object. 
             res= new Response(HTTPServer.ServerName);
             // Let the controler (HttpContrller) handle the request and fill the response.
-            controller.handleRequest(req, res);
+            controller.handleRequest(req, res);     // Tratar de transfers de HTTP para HTTPS
             // Send response
             res.send_Answer(TextPrinter);
 

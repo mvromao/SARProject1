@@ -28,7 +28,7 @@ public class Main {
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
    
     //Static configuration
-    public final String ServerName= "SAR Server by ----/-----";
+    public final String ServerName= "SAR Server by Marcos Romão";
     public final static String StaticFiles = "html";
     public final static String HOMEFILENAME = "index.htm";
     //Keep alive settings
