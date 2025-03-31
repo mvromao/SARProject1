@@ -21,6 +21,7 @@ import java.util.Locale;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.logging.Level;
+import java.time.LocalDateTime; 
 
 import javax.print.attribute.TextSyntax;
 
@@ -123,7 +124,7 @@ public class ConnectionThread extends Thread  {
                 return null;
             }
             req.text= str;
-            logger.debug("Contents('"+req.text+"')\n");
+            logger.info("Contents('"+req.text+"')\n");
         }
 
         return req;
@@ -141,6 +142,17 @@ public class ConnectionThread extends Thread  {
             /*get the input and output Streams for the TCP connection and build
               a text (ASCII) reader (TextReader) and writer (TextPrinter) */
             InputStream in = client.getInputStream( );
+            if(this.ServerSock.getLocalPort() != 20043){
+                logger.info("Connection from client: {}:{}", 
+                    client.getInetAddress().getHostAddress(), 
+                    client.getPort());
+                String httpsUrl = "https://localhost:20043";
+                Response redirect = new Response(HTTPServer.ServerName); 
+                redirect.setCode(ReplyCode.TMPREDIRECT);
+                redirect.setHeader("Location", httpsUrl);
+                TextPrinter = new PrintStream(client.getOutputStream( ), false, "8859_1");
+                redirect.send_Answer(TextPrinter);
+            } else {
             BufferedReader TextReader = new BufferedReader(
                     new InputStreamReader(in, "8859_1" ));
             OutputStream out = client.getOutputStream( );
@@ -149,10 +161,12 @@ public class ConnectionThread extends Thread  {
             req= GetRequest(TextReader); //reads the input http request if everything was read ok it returns true
             //Create response object. 
             res= new Response(HTTPServer.ServerName);
+            
             // Let the controler (HttpContrller) handle the request and fill the response.
             controller.handleRequest(req, res);     // Tratar de transfers de HTTP para HTTPS
             // Send response
             res.send_Answer(TextPrinter);
+            }
 
         } catch (Exception e) {
             logger.error("Error processing request", e);

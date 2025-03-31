@@ -171,6 +171,8 @@ public class Response {
         TextPrinter.print(code.toString() + "\r\n");
         
         //Send all headers using the Headers object
+        this.setDate();
+        
         headers.writeHeaders(TextPrinter);
         /**
          * Check if there are cookies to send if so add the corresponding Set-Cookie Headers
