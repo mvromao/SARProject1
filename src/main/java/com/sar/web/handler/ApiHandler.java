@@ -9,6 +9,8 @@ import com.sar.server.Main;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Properties;
 import java.util.Random;
 
@@ -107,11 +109,13 @@ public class ApiHandler extends AbstractRequestHandler  {
 
         // Your existing dynamic content
         if (count) {
-            html.append("<p>The group:" + (group.length()>0 ? (group) : "?") + " was already updated ");
+            html.append("<p>The group:" + (group.length()>0 ? (group) : " ?") + " was already updated ");
             html.append("" + numberTimes + " times.</p>\r\n");
         }
+            
         html.append("<p>The last access to this server by this user was in: ");
-        html.append("<font color=\"#0000ff\">" + lastUpdate + "</font></p>\r\n");
+        html.append("<font color=\"#0000ff\">" + (group.length() > 0 ? (ZonedDateTime.parse(lastUpdate).format(DateTimeFormatter.ofPattern("EEEE, d MMM yyyy HH:mm:ss"))) : ("")) + "</font></p>\r\n");
+        
 
         // Form
         html.append("<form method=\"post\" action=\"sarAPI\">\r\n");
@@ -182,18 +186,37 @@ public class ApiHandler extends AbstractRequestHandler  {
             int numberTimes = -1;
 
              /**
-         *      This part must check if the browser is sending the sarCookie
-         *      If it is, it must deliver a web page with the last group introduced by the user
-         *      Otherwise, the fields must be empty
-         */
-            logger.debug("Cookies ignored in API GET");
+             *      This part must check if the browser is sending the sarCookie
+             *      If it is, it must deliver a web page with the last group introduced by the user
+             *      Otherwise, the fields must be empty
+             */
+            if(request.headers.getHeaderValue("Cookie") != null) {
+                request.parseCookies();
+                group = request.cookies.getProperty("sarCookie");
+                if (group != null && group.length() > 0) {
+                    if (groupService.groupExists(group)) {
+                        numberTimes = groupService.getGroup(group).getAccessCount();
+                        lastUpdate = groupService.getLastUpdate(group);
+
+                        n1 = groupService.getGroup(group).getMember(0).getNumber();
+                        nam1 = groupService.getGroup(group).getMember(0).getName();
+
+                        n2 = groupService.getGroup(group).getMember(1).getNumber();
+                        nam2 = groupService.getGroup(group).getMember(1).getName();
+                    }
+                } else {
+                    group = "";
+                }
+            }    
+
+
             // Prepare html page
             String html = make_Page(
                 request.getClientAddress(),
                 request.getClientPort(),
                 request.headers.getHeaderValue("User-Agent"),
                 group, numberTimes, n1, nam1, n2, nam2, 
-                false, lastUpdate
+                true, lastUpdate
             );
 
             // Prepare answer
@@ -227,16 +250,26 @@ public class ApiHandler extends AbstractRequestHandler  {
             boolean deleteButton = (fields.getProperty("BotaoApagar") != null);
             boolean counter = (fields.getProperty("Contador") != null);
             
-            // Create or delete group in the database  
-    
-
+            //  Create or delete group in the database  
+            //  Check if group is empty and if the user pressed the delete button or the submit button to
+            //      either delete or save the group. 
+            //  Check the access count and last update.
+            
+            if (submitButton) {
+                groupService.saveGroup(group, numbers, names, counter);
+            } else if (deleteButton) {
+                groupService.deleteGroup(group);
+            }
+            int cnt = 0;
             String lastUpdate = "";
-            int cnt = -1;
-            /*Check if group is emmpty
-             * And if the user pressed the delete button
-             * Or the submit button to either delete or save the group
-             * ckeck the access count and last update
-             */
+             
+            if (groupService.groupExists(group)) {          
+                lastUpdate = groupService.getLastUpdate(group);         
+                groupService.incrementAccessCount(group);               
+                cnt = groupService.getGroup(group).getAccessCount();               
+            }           
+            
+            
 
             logger.info("Button: " + (submitButton ? "Submit" : "") + (deleteButton ? "Delete" : "") + "\n");
             logger.info("POST not completed in API ");
@@ -256,6 +289,9 @@ public class ApiHandler extends AbstractRequestHandler  {
             response.setTextHeaders(html);
             
             // Set cookie if group exists
+            if (groupService.groupExists(group)) 
+                response.setHeader("Set-Cookie", "sarCookie=" + group);
+             
             return ;
 
         } catch (Exception e) {

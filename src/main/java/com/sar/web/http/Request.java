@@ -66,6 +66,18 @@ public class Request {
         }
     }
 
+    //Parse Parameters
+    public void parseParameters() {;
+        if (headers.getHeaderValue("Content-Type") != null ) {
+            for (String pair : text.split("&")) {
+                String[] parts = pair.split("=");
+                if (parts.length == 2) {
+                    postParameters.setProperty(parts[0], parts[1]);
+                }
+            }
+        }
+    }
+
      /**
      * Get a header property value
      * @param hdrName   header name

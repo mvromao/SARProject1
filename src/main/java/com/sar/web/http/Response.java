@@ -180,6 +180,9 @@ public class Response {
          * since it uses a Properties Object to store the headers and there can be multiple Set-cookie headers 
          * and a Properties cannot have two Keys with the same value
          */
+        for (String cookie : setCookie) {
+            TextPrinter.print("Set-Cookie: " + cookie + "\r\n");
+        }
         //end of headers
         TextPrinter.print("\r\n");
         //write content if present

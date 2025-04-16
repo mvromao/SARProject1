@@ -2,6 +2,7 @@ package com.sar.web.handler;
 
 import com.sar.web.http.Request;
 import com.sar.web.http.Response;
+import com.sar.server.Main;
 import com.sar.web.http.ReplyCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,6 +10,14 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
+
+import java.util.Base64;
 
 public class StaticFileHandler extends AbstractRequestHandler {
     private static final Logger logger = LoggerFactory.getLogger(StaticFileHandler.class);
@@ -46,11 +55,52 @@ public class StaticFileHandler extends AbstractRequestHandler {
         File file = new File(fullPath);
         
         try {
+            if(Main.Authorization) {
+                if(request.headers.getHeaderValue("Cookie") != null) {
+                    request.parseCookies();
+                    String authCookie = request.cookies.getProperty("CookieAuth");
+                    if (authCookie != null && !authCookie.equals("63753")) {
+                        logger.warn("Invalid cookie received: {}", authCookie);
+                        response.setHeader("Cause", "Invalid cookie");
+                        response.setError(ReplyCode.UNAUTHORIZED, request.version);
+                        return;
+                    }
+                } else {
+                    String authHeader = request.headers.getHeaderValue("Authorization");
+                    if (authHeader == null || !authHeader.equals("Basic " + Base64.getEncoder().encodeToString(Main.UserPass.getBytes()))) {
+                        logger.warn("Authorization failed for file: {}", file.getAbsolutePath());
+                        response.setError(ReplyCode.UNAUTHORIZED, request.version);
+                        response.setHeader("WWW-Authenticate", "basic");
+                        return;
+                    }
+                }
+            }
+            
+            response.addCookie("CookieAuth=63753");
+
+            DateFormat httpformat = new SimpleDateFormat("EE, d MMM yyyy HH:mm:ss zz", Locale.UK);
+            httpformat.setTimeZone(TimeZone.getTimeZone("GMT"));
+            String ifModifiedSince = request.headers.getHeaderValue("If-Modified-Since");
+            if (ifModifiedSince != null) {
+                Date headerModifiedDate = httpformat.parse(ifModifiedSince);
+                if(headerModifiedDate.getTime() >= file.lastModified()) {
+                    logger.info("File not modified since last request: {}", fullPath);
+                    response.setCode(ReplyCode.NOTMODIFIED);
+                    response.setVersion(request.version);
+                    return;
+                }
+            }
+            
             if (file.exists() && file.isFile()) {
                 response.setCode(ReplyCode.OK);
                 response.setVersion(request.version);
                 response.setFile(file);
                 // set file headers
+
+                response.setHeader("Content-Type", getMimeType(path));
+                response.setHeader("Content-Length", String.valueOf(file.length()));
+                response.setHeader("Last-Modified", httpformat.format(new Date(file.lastModified())));
+                
                 logger.info("Serving file: {}", fullPath);
             } else {
                 logger.warn("File not found: {}. Returning 404 error.", fullPath);

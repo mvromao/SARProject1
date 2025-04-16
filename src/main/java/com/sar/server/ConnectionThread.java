@@ -124,6 +124,8 @@ public class ConnectionThread extends Thread  {
                 return null;
             }
             req.text= str;
+            req.parseParameters();
+            
             logger.info("Contents('"+req.text+"')\n");
         }
 
@@ -143,31 +145,25 @@ public class ConnectionThread extends Thread  {
               a text (ASCII) reader (TextReader) and writer (TextPrinter) */
             InputStream in = client.getInputStream( );
             if(this.ServerSock.getLocalPort() != 20043){
-                logger.info("Connection from client: {}:{}", 
-                    client.getInetAddress().getHostAddress(), 
-                    client.getPort());
+                logger.info("Connection from client: {}:{}", client.getInetAddress().getHostAddress(), client.getPort());
                 String httpsUrl = "https://localhost:20043";
-                Response redirect = new Response(HTTPServer.ServerName); 
-                redirect.setCode(ReplyCode.TMPREDIRECT);
-                redirect.setHeader("Location", httpsUrl);
+                res = new Response(HTTPServer.ServerName); 
+                res.setCode(ReplyCode.TMPREDIRECT);
+                res.setHeader("Location", httpsUrl);
                 TextPrinter = new PrintStream(client.getOutputStream( ), false, "8859_1");
-                redirect.send_Answer(TextPrinter);
             } else {
-            BufferedReader TextReader = new BufferedReader(
-                    new InputStreamReader(in, "8859_1" ));
-            OutputStream out = client.getOutputStream( );
-            TextPrinter = new PrintStream(out, false, "8859_1");
-            // Read and parse request
-            req= GetRequest(TextReader); //reads the input http request if everything was read ok it returns true
-            //Create response object. 
-            res= new Response(HTTPServer.ServerName);
-            
-            // Let the controler (HttpContrller) handle the request and fill the response.
-            controller.handleRequest(req, res);     // Tratar de transfers de HTTP para HTTPS
-            // Send response
-            res.send_Answer(TextPrinter);
+                BufferedReader TextReader = new BufferedReader(new InputStreamReader(in, "8859_1" ));
+                OutputStream out = client.getOutputStream( );
+                TextPrinter = new PrintStream(out, false, "8859_1");
+                // Read and parse request
+                req= GetRequest(TextReader); //reads the input http request if everything was read ok it returns true
+                //Create response object. 
+                res= new Response(HTTPServer.ServerName);
+                
+                // Let the controler (HttpContrller) handle the request and fill the response.
+                controller.handleRequest(req, res);     // Tratar de transfers de HTTP para HTTPS
             }
-
+            res.send_Answer(TextPrinter);
         } catch (Exception e) {
             logger.error("Error processing request", e);
             if (res != null) {
